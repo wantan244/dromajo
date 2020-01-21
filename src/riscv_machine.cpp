@@ -62,7 +62,7 @@
 //#define DUMP_CLINT
 //#define DUMP_HTIF
 //#define DUMP_PLIC
-#define DUMP_DTB
+//#define DUMP_DTB
 
 #define USE_SIFIVE_UART
 
@@ -197,6 +197,43 @@ static void uart_write(void *opaque, uint32_t offset, uint32_t val, int size_log
     }
 
     fprintf(dromajo_stderr, "%s: bad write: addr=0x%x v=0x%x\n", __func__, (int)offset, (int)val);
+}
+
+std::queue<int> getchar_queue;
+
+void monitor()
+{
+  int c;
+  while(1) {
+      c = getchar();
+      if(c != -1) {
+        getchar_queue.push(c);
+      }
+  }
+}
+
+void host_init(RISCVMachine* m) {
+  std::thread t(&monitor);
+  t.detach();
+}
+
+static uint32_t host_read(void *opaque, uint32_t offset, int size_log2) {
+  int c = -1;
+  if(offset == HOST_GETCHAR && !getchar_queue.empty()) {
+    c = getchar_queue.front();
+    getchar_queue.pop();
+  }
+  return c;
+}
+
+static void host_write(void *opaque, uint32_t offset, uint32_t val, int size_log2) {
+  if(offset == HOST_PUTCHAR) {
+    printf("%c", val);
+    fflush(stdout);
+  }
+  else if(offset == HOST_FINISH) {
+    exit(val);
+  }
 }
 
 /* CLINT registers
@@ -1150,6 +1187,10 @@ RISCVMachine *virt_machine_init(const VirtMachineParams *p)
                         clint_read, clint_write, DEVIO_SIZE32 | DEVIO_SIZE16 | DEVIO_SIZE8);
     cpu_register_device(s->mem_map, p->plic_base_addr, p->plic_size, s,
                         plic_read, plic_write, DEVIO_SIZE32);
+    //BP host
+    host_init(s);
+    cpu_register_device(s->mem_map, HOST_BASE_ADDR, HOST_SIZE, s,
+                        host_read, host_write, DEVIO_SIZE32 | DEVIO_SIZE16 | DEVIO_SIZE8);
 
     for (int j = 1; j < 32; j++) {
         irq_init(&s->plic_irq[j], plic_set_irq, s, j);

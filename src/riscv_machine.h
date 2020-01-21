@@ -40,6 +40,9 @@
 #ifndef RISCV_MACHINE_H
 #define RISCV_MACHINE_H
 
+#include <queue>
+#include <thread>
+
 #include "virtio.h"
 #include "machine.h"
 #include "riscv_cpu.h"
@@ -109,8 +112,14 @@ struct RISCVMachine {
 #define PLIC_BASE_ADDR  0x10000000
 #define PLIC_SIZE        0x2000000
 
-#define CLINT_BASE_ADDR 0x02000000
+#define CLINT_BASE_ADDR 0x00300000
 #define CLINT_SIZE      0x000c0000
+
+#define HOST_BASE_ADDR 0x00100000
+#define HOST_SIZE      0x00100000
+#define HOST_GETCHAR   0x0
+#define HOST_PUTCHAR   0x1000
+#define HOST_FINISH    0x2000
 
 #define RTC_FREQ_DIV 16 /* arbitrary, relative to CPU freq to have a
                            10 MHz frequency */
