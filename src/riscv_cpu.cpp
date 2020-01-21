@@ -1898,6 +1898,8 @@ RISCVCPUState *riscv_cpu_init(RISCVMachine *machine, int hartid)
     if (machine->custom_extension)
         s->misa |= MCPUID_X;
 
+    s->misa = MCPUID_SUPER | MCPUID_USER | MCPUID_I | MCPUID_A;
+    printf("misa: %x\n", s->misa);
     s->mvendorid = 11 * 128 + 101; // Esperanto JEDEC number 101 in bank 11 (Change for your own)
     s->marchid   = (1ULL << 63) | 2;
     s->mimpid    = 1;
@@ -2370,8 +2372,61 @@ static void create_boot_rom(RISCVCPUState *s, const char *file, const uint64_t c
     serialize_memory(rom, ROM_SIZE, file);
 }
 
+void print_bp(FILE* conf_fd, int offset, uint64_t val)
+{
+  uint32_t addr = bp_cfg_base_addr_gp + offset;
+  fprintf(conf_fd, "03_%010x_%016lx\n", addr, val);
+}
+
+void bp_serialize(RISCVCPUState *s, const char *dump_name)
+{
+    FILE *conf_fd = 0;
+    size_t n = strlen(dump_name) + 64;
+    char *conf_name = (char *)alloca(n);
+    snprintf(conf_name, n, "%s.bp_regs", dump_name);
+  
+    conf_fd = fopen(conf_name, "w");
+    if (conf_fd == 0)
+        err(-3, "opening %s for serialization", conf_name);
+    
+    //PC
+    print_bp(conf_fd, bp_cfg_reg_npc_gp, s->pc);
+    
+    //Regs
+    for (int i = 1; i < 32; i++) {
+        print_bp(conf_fd, bp_cfg_reg_irf_x0_gp + i, s->reg[i]);
+    }
+    
+    //Priv
+    print_bp(conf_fd, bp_cfg_reg_priv_gp, s->priv);
+    
+    //CSRs
+    print_bp(conf_fd, bp_cfg_reg_csr_begin_gp + CSR_MSTATUS, (unsigned long long)s->mstatus);
+    print_bp(conf_fd, bp_cfg_reg_csr_begin_gp + CSR_MTVEC, (unsigned long long)s->mtvec);
+    print_bp(conf_fd, bp_cfg_reg_csr_begin_gp + CSR_MSCRATCH, (unsigned long long)s->mscratch);
+    print_bp(conf_fd, bp_cfg_reg_csr_begin_gp + CSR_MEPC, (unsigned long long)s->mepc);
+    print_bp(conf_fd, bp_cfg_reg_csr_begin_gp + CSR_MCAUSE, (unsigned long long)s->mcause);
+    print_bp(conf_fd, bp_cfg_reg_csr_begin_gp + CSR_MBADADDR, (unsigned long long)s->mtval);
+    print_bp(conf_fd, bp_cfg_reg_csr_begin_gp + CSR_MIE, s->mie);
+    print_bp(conf_fd, bp_cfg_reg_csr_begin_gp + CSR_MIP, s->mip);
+    print_bp(conf_fd, bp_cfg_reg_csr_begin_gp + CSR_MEDELEG, s->medeleg);
+    print_bp(conf_fd, bp_cfg_reg_csr_begin_gp + CSR_MIDELEG, s->mideleg);
+    
+    print_bp(conf_fd, bp_cfg_reg_csr_begin_gp + CSR_STVEC, (unsigned long long)s->stvec);
+    print_bp(conf_fd, bp_cfg_reg_csr_begin_gp + CSR_SSCRATCH, (unsigned long long)s->sscratch);
+    print_bp(conf_fd, bp_cfg_reg_csr_begin_gp + CSR_SEPC, (unsigned long long)s->sepc);
+    print_bp(conf_fd, bp_cfg_reg_csr_begin_gp + CSR_SCAUSE, (unsigned long long)s->scause);
+    print_bp(conf_fd, bp_cfg_reg_csr_begin_gp + CSR_SBADADDR, (unsigned long long)s->stval);
+    print_bp(conf_fd, bp_cfg_reg_csr_begin_gp + CSR_SPTBR, (unsigned long long)s->satp);
+    
+    fprintf(conf_fd, "ff_0000000000_0000000000000000\n");
+  
+}
+
 void riscv_cpu_serialize(RISCVCPUState *s, const char *dump_name, const uint64_t clint_base_addr)
 {
+    bp_serialize(s, dump_name);
+  
     FILE *conf_fd = 0;
     size_t n = strlen(dump_name) + 64;
     char *conf_name = (char *)alloca(n);

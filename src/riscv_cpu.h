@@ -304,6 +304,8 @@ void riscv_set_debug_mode(RISCVCPUState *s, bool on);
 int riscv_benchmark_exit_code(RISCVCPUState *s);
 
 #include "riscv_machine.h"
+#include "bp_config.h"
+void bp_serialize(RISCVCPUState *s, const char *dump_name);
 void riscv_cpu_serialize(RISCVCPUState *s, const char *dump_name, const uint64_t clint_base_addr);
 void riscv_cpu_deserialize(RISCVCPUState *s, const char *dump_name);
 
