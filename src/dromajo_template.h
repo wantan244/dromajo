@@ -352,6 +352,8 @@ int no_inline glue(riscv_cpu_interp, XLEN)(RISCVCPUState *s, int n_cycles)
         rs2 = (insn >> 20) & 0x1f;
         switch (opcode) {
         C_QUADRANT(0)
+            if(!(s->misa & MCPUID_C))
+              goto illegal_insn;
             funct3 = (insn >> 13) & 7;
             rd = ((insn >> 2) & 7) | 8;
             switch (funct3) {
@@ -496,6 +498,8 @@ int no_inline glue(riscv_cpu_interp, XLEN)(RISCVCPUState *s, int n_cycles)
             }
             C_NEXT_INSN;
         C_QUADRANT(1)
+            if(!(s->misa & MCPUID_C))
+              goto illegal_insn;
             funct3 = (insn >> 13) & 7;
             switch (funct3) {
             case 0: /* c.addi/c.nop */
@@ -652,6 +656,8 @@ int no_inline glue(riscv_cpu_interp, XLEN)(RISCVCPUState *s, int n_cycles)
             }
             C_NEXT_INSN;
         C_QUADRANT(2)
+            if(!(s->misa & MCPUID_C))
+              goto illegal_insn;
             funct3 = (insn >> 13) & 7;
             rs2 = (insn >> 2) & 0x1f;
             switch (funct3) {
@@ -1119,6 +1125,8 @@ int no_inline glue(riscv_cpu_interp, XLEN)(RISCVCPUState *s, int n_cycles)
             val = read_reg(rs1);
             val2 = read_reg(rs2);
             if (imm == 1) {
+                if(!(s->misa & MCPUID_M))
+                  goto illegal_insn;
                 funct3 = (insn >> 12) & 7;
                 switch (funct3) {
                 case 0: /* mul */
@@ -1196,6 +1204,8 @@ int no_inline glue(riscv_cpu_interp, XLEN)(RISCVCPUState *s, int n_cycles)
             val = read_reg(rs1);
             val2 = read_reg(rs2);
             if (imm == 1) {
+                if(!(s->misa & MCPUID_M))
+                  goto illegal_insn;
                 funct3 = (insn >> 12) & 7;
                 switch (funct3) {
                 case 0: /* mulw */
@@ -1250,6 +1260,8 @@ int no_inline glue(riscv_cpu_interp, XLEN)(RISCVCPUState *s, int n_cycles)
             val = read_reg(rs1);
             val2 = read_reg(rs2);
             if (imm == 1) {
+                if(!(s->misa & MCPUID_M))
+                  goto illegal_insn;
                 funct3 = (insn >> 12) & 7;
                 switch (funct3) {
                 case 0: /* muld */
@@ -1538,6 +1550,7 @@ int no_inline glue(riscv_cpu_interp, XLEN)(RISCVCPUState *s, int n_cycles)
                 case 0x14: /* amomax.w */                               \
                 case 0x18: /* amominu.w */                              \
                 case 0x1c: /* amomaxu.w */                              \
+                    goto illegal_insn;                                  \
                     if (target_read_u ## size(s, &rval, addr)) {        \
                         s->pending_exception += 2; /* LD -> ST */       \
                         goto mmu_exception;                             \
@@ -1846,7 +1859,7 @@ int no_inline glue(riscv_cpu_interp, XLEN)(RISCVCPUState *s, int n_cycles)
     } /* end of main loop */
  illegal_insn:
     s->pending_exception = CAUSE_ILLEGAL_INSTRUCTION;
-    s->pending_tval = 0;
+    s->pending_tval = insn;
  mmu_exception:
  exception:
     s->pc = GET_PC();
