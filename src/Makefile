@@ -45,7 +45,8 @@ CFLAGS_OPT=-Ofast
 CXXFLAGS=$(CFLAGS_OPT) -Wall -std=c++11 -g -Wno-parentheses -D_FILE_OFFSET_BITS=64 -D_LARGEFILE_SOURCE -MMD
 CXXFLAGS+=-D_GNU_SOURCE -DCONFIG_VERSION=\"$(VERSION)\"
 #CXXFLAGS+=-DLIVECACHE
-LDFLAGS=
+# Ubuntu prefers pthread to lpthread
+LDFLAGS=-pthread
 
 bindir=/usr/local/bin
 INSTALL=install
