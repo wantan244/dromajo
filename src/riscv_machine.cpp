@@ -214,6 +214,8 @@ void host_monitor()
 
 void host_init(RISCVMachine* m) {
   if(m->host) {
+      while(!getchar_fifo.empty())
+          getchar_fifo.pop();
       std::thread t(&host_monitor);
       t.detach();
   }
@@ -1199,7 +1201,7 @@ RISCVMachine *virt_machine_init(const VirtMachineParams *p)
     //BP host
     host_init(s);
     cpu_register_device(s->mem_map, HOST_BASE_ADDR, HOST_SIZE, s,
-                        host_read, host_write, DEVIO_SIZE32 | DEVIO_SIZE16 | DEVIO_SIZE8);
+                        host_read, host_write, DEVIO_SIZE32);
     for (int j = 1; j < 32; j++) {
         irq_init(&s->plic_irq[j], plic_set_irq, s, j);
     }
