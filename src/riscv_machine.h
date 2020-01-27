@@ -105,6 +105,9 @@ struct RISCVMachine {
     /* Append to misa custom extensions */
     bool custom_extension;
 
+    /* Enable BP host */
+    bool host;
+
     /* Extension state, not used by Dromajo itself */
     void *ext_state;
 };

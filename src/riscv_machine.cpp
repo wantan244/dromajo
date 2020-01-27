@@ -199,40 +199,46 @@ static void uart_write(void *opaque, uint32_t offset, uint32_t val, int size_log
     fprintf(dromajo_stderr, "%s: bad write: addr=0x%x v=0x%x\n", __func__, (int)offset, (int)val);
 }
 
-std::queue<int> getchar_queue;
+std::queue<int> getchar_fifo;
 
-void monitor()
+void host_monitor()
 {
   int c;
   while(1) {
       c = getchar();
       if(c != -1) {
-        getchar_queue.push(c);
+        getchar_fifo.push(c);
       }
   }
 }
 
 void host_init(RISCVMachine* m) {
-  std::thread t(&monitor);
-  t.detach();
+  if(m->host) {
+      std::thread t(&host_monitor);
+      t.detach();
+  }
 }
 
 static uint32_t host_read(void *opaque, uint32_t offset, int size_log2) {
+  RISCVMachine *m = (RISCVMachine *)opaque;
   int c = -1;
-  if(offset == HOST_GETCHAR && !getchar_queue.empty()) {
-    c = getchar_queue.front();
-    getchar_queue.pop();
+  if(m->host && offset == HOST_GETCHAR && !getchar_fifo.empty()) {
+    c = getchar_fifo.front();
+    getchar_fifo.pop();
   }
   return c;
 }
 
 static void host_write(void *opaque, uint32_t offset, uint32_t val, int size_log2) {
-  if(offset == HOST_PUTCHAR) {
-    printf("%c", val);
-    fflush(stdout);
-  }
-  else if(offset == HOST_FINISH) {
-    exit(val);
+  RISCVMachine *m = (RISCVMachine *)opaque;
+  if(m->host) {
+    if(offset == HOST_PUTCHAR) {
+      printf("%c", val);
+      fflush(stdout);
+    }
+    else if(offset == HOST_FINISH) {
+      exit(val);
+    }
   }
 }
 
@@ -1138,6 +1144,8 @@ RISCVMachine *virt_machine_init(const VirtMachineParams *p)
     s->clint_base_addr = p->clint_base_addr;
     s->clint_size      = p->clint_size;
 
+    s->host = p->host;
+
     if (MAX_CPUS < s->ncpus) {
         fprintf(stderr, "ERROR: ncpus:%d exceeds maximum MAX_CPU\n", s->ncpus);
         exit(3);
@@ -1191,7 +1199,6 @@ RISCVMachine *virt_machine_init(const VirtMachineParams *p)
     host_init(s);
     cpu_register_device(s->mem_map, HOST_BASE_ADDR, HOST_SIZE, s,
                         host_read, host_write, DEVIO_SIZE32 | DEVIO_SIZE16 | DEVIO_SIZE8);
-
     for (int j = 1; j < 32; j++) {
         irq_init(&s->plic_irq[j], plic_set_irq, s, j);
     }
