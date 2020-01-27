@@ -1864,15 +1864,8 @@ int no_inline glue(riscv_cpu_interp, XLEN)(RISCVCPUState *s, int n_cycles)
  exception:
     s->pc = GET_PC();
     if (s->pending_exception >= 0) {
-        if ((s->pending_exception < CAUSE_USER_ECALL ||
-             s->pending_exception > CAUSE_USER_ECALL + 3) &&
-            s->pending_exception != CAUSE_BREAKPOINT) {
-            /* All other causes cancelled the instruction and shouldn't be
-             * counted in minstret */
-            --insn_counter_addend;
-            --insn_executed;
-        }
-
+        --insn_counter_addend;
+        --insn_executed;
         raise_exception2(s, s->pending_exception, s->pending_tval);
     }
     /* we exit because XLEN may have changed */
