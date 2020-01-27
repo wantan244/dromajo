@@ -236,7 +236,7 @@ int dromajo_cosim_step(dromajo_cosim_state_t *state,
     uint32_t emu_insn;
     bool     emu_wrote_data = false;
     int      exit_code = 0;
-    bool     verbose = true;
+    bool     verbose = false;
     int      iregno, fregno;
 
     /* Succeed after N instructions without failure. */
@@ -262,6 +262,11 @@ int dromajo_cosim_step(dromajo_cosim_state_t *state,
         emu_priv = riscv_get_priv_level(s);
         emu_pc   = riscv_get_pc(s);
         riscv_read_insn(s, &emu_insn, emu_pc);
+
+        if(s->debug_mode) {
+            riscv_cpu_interp64(s,1);
+            continue;
+        }
 
         if ((emu_insn & 3) != 3)
             emu_insn &= 0xFFFF;
@@ -335,7 +340,7 @@ int dromajo_cosim_step(dromajo_cosim_state_t *state,
         emu_wrote_data = 1;
         if (verbose)
             fprintf(dromajo_stderr, "f%-2d 0x%016" PRIx64, fregno, emu_wdata);
-    } else
+    } else if(verbose)
         fprintf(dromajo_stderr, "                      ");
 
     if (verbose)
