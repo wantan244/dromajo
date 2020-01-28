@@ -62,7 +62,8 @@ int dromajo_cosim_step(dromajo_cosim_state_t *state,
                        uint32_t               dut_insn,
                        uint64_t               dut_wdata,
                        uint64_t               mstatus,
-                       bool                   check);
+                       bool                   check,
+                       bool                   verbose);
 
 /*
  * dromajo_cosim_raise_trap --
@@ -73,7 +74,8 @@ int dromajo_cosim_step(dromajo_cosim_state_t *state,
  */
 void dromajo_cosim_raise_trap(dromajo_cosim_state_t *state,
                               int                   hartid,
-                              int64_t               cause);
+                              int64_t               cause,
+                              bool                  verbose);
 #ifdef __cplusplus
 } // extern C
 #endif
