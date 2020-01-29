@@ -2378,7 +2378,7 @@ void print_bp(FILE* conf_fd, int offset, uint64_t val)
   fprintf(conf_fd, "03_%010x_%016lx\n", addr, val);
 }
 
-void bp_serialize(RISCVCPUState *s, const char *dump_name)
+void bp_serialize(RISCVCPUState *s, const char *dump_name, const uint64_t clint_base_addr)
 {
     FILE *conf_fd = 0;
     size_t n = strlen(dump_name) + 64;
@@ -2396,10 +2396,7 @@ void bp_serialize(RISCVCPUState *s, const char *dump_name)
     for (int i = 1; i < 32; i++) {
         print_bp(conf_fd, bp_cfg_reg_irf_x0_gp + i, s->reg[i]);
     }
-    
-    //Priv
-    print_bp(conf_fd, bp_cfg_reg_priv_gp, s->priv);
-    
+
     //CSRs
     print_bp(conf_fd, bp_cfg_reg_csr_begin_gp + CSR_MSTATUS, (unsigned long long)s->mstatus);
     print_bp(conf_fd, bp_cfg_reg_csr_begin_gp + CSR_MTVEC, (unsigned long long)s->mtvec);
@@ -2418,14 +2415,22 @@ void bp_serialize(RISCVCPUState *s, const char *dump_name)
     print_bp(conf_fd, bp_cfg_reg_csr_begin_gp + CSR_SCAUSE, (unsigned long long)s->scause);
     print_bp(conf_fd, bp_cfg_reg_csr_begin_gp + CSR_SBADADDR, (unsigned long long)s->stval);
     print_bp(conf_fd, bp_cfg_reg_csr_begin_gp + CSR_SPTBR, (unsigned long long)s->satp);
-    
+
+    //Priv
+    print_bp(conf_fd, bp_cfg_reg_priv_gp, s->priv);
+
+    //Clint
+    print_bp(conf_fd, (clint_base_addr-bp_cfg_base_addr_gp) + 0x4000, (unsigned long long)s->timecmp);
+    print_bp(conf_fd, (clint_base_addr-bp_cfg_base_addr_gp) + 0x0   , (unsigned long long)(s->mip & MIP_MSIP)/MIP_MSIP);
+    print_bp(conf_fd, (clint_base_addr-bp_cfg_base_addr_gp) + 0xb000, (unsigned long long)(s->mip & MIP_MEIP)/MIP_MEIP);
+
+    //Finish
     fprintf(conf_fd, "ff_0000000000_0000000000000000\n");
-  
 }
 
 void riscv_cpu_serialize(RISCVCPUState *s, const char *dump_name, const uint64_t clint_base_addr)
 {
-    bp_serialize(s, dump_name);
+    bp_serialize(s, dump_name, clint_base_addr);
   
     FILE *conf_fd = 0;
     size_t n = strlen(dump_name) + 64;
@@ -2481,6 +2486,9 @@ void riscv_cpu_serialize(RISCVCPUState *s, const char *dump_name, const uint64_t
     fprintf(conf_fd, "stval:%llx\n", (unsigned long long)s->stval);
     fprintf(conf_fd, "satp:%llx\n", (unsigned long long)s->satp);
     fprintf(conf_fd, "scounteren:%llx\n", (unsigned long long)s->scounteren);
+
+    fprintf(conf_fd, "mtimecmp:%llx\n", (unsigned long long)s->timecmp);
+    fprintf(conf_fd, "mtime:%llx\n", (unsigned long long)(s->mcycle/RTC_FREQ_DIV));
 
     for (int i = 0; i < 4; i += 2)
         fprintf(conf_fd, "pmpcfg%d:%llx\n", i, (unsigned long long)s->csr_pmpcfg[i]);
