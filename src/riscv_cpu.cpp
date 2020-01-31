@@ -2423,6 +2423,7 @@ void bp_serialize(RISCVCPUState *s, const char *dump_name, const uint64_t clint_
     print_bp(conf_fd, (clint_base_addr-bp_cfg_base_addr_gp) + 0x4000, (unsigned long long)s->timecmp);
     print_bp(conf_fd, (clint_base_addr-bp_cfg_base_addr_gp) + 0x0   , (unsigned long long)(s->mip & MIP_MSIP)/MIP_MSIP);
     print_bp(conf_fd, (clint_base_addr-bp_cfg_base_addr_gp) + 0xb000, (unsigned long long)(s->mip & MIP_MEIP)/MIP_MEIP);
+    print_bp(conf_fd, (clint_base_addr-bp_cfg_base_addr_gp) + 0xbff8, (unsigned long long)(s->mcycle/RTC_FREQ_DIV));
 
     //Finish
     fprintf(conf_fd, "ff_0000000000_0000000000000000\n");
