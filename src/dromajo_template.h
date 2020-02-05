@@ -382,7 +382,7 @@ int no_inline glue(riscv_cpu_interp, XLEN)(RISCVCPUState *s, int n_cycles)
             case 1: /* c.fld */
                 {
                     uint64_t rval;
-                    if (s->fs == 0)
+                    if (s->fs == 0 || !(s->misa & MCPUID_D))
                         goto illegal_insn;
                     imm = get_field1(insn, 10, 3, 5) |
                         get_field1(insn, 5, 6, 7);
@@ -424,7 +424,7 @@ int no_inline glue(riscv_cpu_interp, XLEN)(RISCVCPUState *s, int n_cycles)
             case 3: /* c.flw */
                 {
                     uint32_t rval;
-                    if (s->fs == 0)
+                    if (s->fs == 0 || !(s->misa & MCPUID_F))
                         goto illegal_insn;
                     imm = get_field1(insn, 10, 3, 5) |
                         get_field1(insn, 6, 2, 2) |
@@ -450,7 +450,7 @@ int no_inline glue(riscv_cpu_interp, XLEN)(RISCVCPUState *s, int n_cycles)
                 break;
 #elif FLEN >= 64
             case 5: /* c.fsd */
-                if (s->fs == 0)
+                if (s->fs == 0 || !(s->misa & MCPUID_D))
                     goto illegal_insn;
                 imm = get_field1(insn, 10, 3, 5) |
                     get_field1(insn, 5, 6, 7);
@@ -482,7 +482,7 @@ int no_inline glue(riscv_cpu_interp, XLEN)(RISCVCPUState *s, int n_cycles)
                 break;
 #elif FLEN >= 32
             case 7: /* c.fsw */
-                if (s->fs == 0)
+                if (s->fs == 0 || !(s->misa & MCPUID_F))
                     goto illegal_insn;
                 imm = get_field1(insn, 10, 3, 5) |
                     get_field1(insn, 6, 2, 2) |
@@ -690,7 +690,7 @@ int no_inline glue(riscv_cpu_interp, XLEN)(RISCVCPUState *s, int n_cycles)
             case 1: /* c.fldsp */
                 {
                     uint64_t rval;
-                    if (s->fs == 0)
+                    if (s->fs == 0 || !(s->misa & MCPUID_D))
                         goto illegal_insn;
                     imm = get_field1(insn, 12, 5, 5) |
                         (rs2 & (3 << 3)) |
@@ -735,7 +735,7 @@ int no_inline glue(riscv_cpu_interp, XLEN)(RISCVCPUState *s, int n_cycles)
             case 3: /* c.flwsp */
                 {
                     uint32_t rval;
-                    if (s->fs == 0)
+                    if (s->fs == 0 || !(s->misa & MCPUID_F))
                         goto illegal_insn;
                     imm = get_field1(insn, 12, 5, 5) |
                         (rs2 & (7 << 2)) |
@@ -790,7 +790,7 @@ int no_inline glue(riscv_cpu_interp, XLEN)(RISCVCPUState *s, int n_cycles)
                 break;
 #elif FLEN >= 64
             case 5: /* c.fsdsp */
-                if (s->fs == 0)
+                if (s->fs == 0 || !(s->misa & MCPUID_D))
                     goto illegal_insn;
                 imm = get_field1(insn, 10, 3, 5) |
                     get_field1(insn, 7, 6, 8);
@@ -816,7 +816,7 @@ int no_inline glue(riscv_cpu_interp, XLEN)(RISCVCPUState *s, int n_cycles)
                 break;
 #elif FLEN >= 32
             case 7: /* c.swsp */
-                if (s->fs == 0)
+                if (s->fs == 0 || !(s->misa & MCPUID_F))
                     goto illegal_insn;
                 imm = get_field1(insn, 9, 2, 5) |
                     get_field1(insn, 7, 6, 7);
@@ -1622,7 +1622,7 @@ int no_inline glue(riscv_cpu_interp, XLEN)(RISCVCPUState *s, int n_cycles)
 #if FLEN > 0
             /* FPU */
         case 0x07: /* fp load */
-            if (s->fs == 0)
+            if (s->fs == 0 || !(s->misa & MCPUID_F))
                 goto illegal_insn;
             funct3 = (insn >> 12) & 7;
             imm = (int32_t)insn >> 20;
@@ -1661,7 +1661,7 @@ int no_inline glue(riscv_cpu_interp, XLEN)(RISCVCPUState *s, int n_cycles)
             }
             NEXT_INSN;
         case 0x27: /* fp store */
-            if (s->fs == 0)
+            if (s->fs == 0 || !(s->misa & MCPUID_F))
                 goto illegal_insn;
             funct3 = (insn >> 12) & 7;
             imm = rd | ((insn >> (25 - 5)) & 0xfe0);
@@ -1689,7 +1689,7 @@ int no_inline glue(riscv_cpu_interp, XLEN)(RISCVCPUState *s, int n_cycles)
             }
             NEXT_INSN;
         case 0x43: /* fmadd */
-            if (s->fs == 0)
+            if (s->fs == 0 || !(s->misa & MCPUID_F))
                 goto illegal_insn;
             funct3 = (insn >> 25) & 3;
             rs3 = insn >> 27;
@@ -1723,7 +1723,7 @@ int no_inline glue(riscv_cpu_interp, XLEN)(RISCVCPUState *s, int n_cycles)
             }
             NEXT_INSN;
         case 0x47: /* fmsub */
-            if (s->fs == 0)
+            if (s->fs == 0 || !(s->misa & MCPUID_F))
                 goto illegal_insn;
             funct3 = (insn >> 25) & 3;
             rs3 = insn >> 27;
@@ -1758,7 +1758,7 @@ int no_inline glue(riscv_cpu_interp, XLEN)(RISCVCPUState *s, int n_cycles)
             }
             NEXT_INSN;
         case 0x4b: /* fnmsub */
-            if (s->fs == 0)
+            if (s->fs == 0 || !(s->misa & MCPUID_F))
                 goto illegal_insn;
             funct3 = (insn >> 25) & 3;
             rs3 = insn >> 27;
@@ -1793,7 +1793,7 @@ int no_inline glue(riscv_cpu_interp, XLEN)(RISCVCPUState *s, int n_cycles)
             }
             NEXT_INSN;
         case 0x4f: /* fnmadd */
-            if (s->fs == 0)
+            if (s->fs == 0 || !(s->misa & MCPUID_F))
                 goto illegal_insn;
             funct3 = (insn >> 25) & 3;
             rs3 = insn >> 27;
@@ -1828,7 +1828,7 @@ int no_inline glue(riscv_cpu_interp, XLEN)(RISCVCPUState *s, int n_cycles)
             }
             NEXT_INSN;
         case 0x53:
-            if (s->fs == 0)
+            if (s->fs == 0 || !(s->misa & MCPUID_F))
                 goto illegal_insn;
             imm = insn >> 25;
             rm = (insn >> 12) & 7;

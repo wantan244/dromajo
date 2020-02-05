@@ -939,17 +939,17 @@ static int csr_read(RISCVCPUState *s, target_ulong *pval, uint32_t csr,
     switch (csr) {
 #if FLEN > 0
     case 0x001: /* fflags */
-        if (s->fs == 0)
+        if (s->fs == 0 || !(s->misa & MCPUID_F))
             return -1;
         val = s->fflags;
         break;
     case 0x002: /* frm */
-        if (s->fs == 0)
+        if (s->fs == 0 || !(s->misa & MCPUID_F))
             return -1;
         val = s->frm;
         break;
     case 0x003:
-        if (s->fs == 0)
+        if (s->fs == 0 || !(s->misa & MCPUID_F))
             return -1;
         val = s->fflags | (s->frm << 5);
         break;
@@ -1313,14 +1313,20 @@ static int csr_write(RISCVCPUState *s, uint32_t csr, target_ulong val)
     switch (csr) {
 #if FLEN > 0
     case 0x001: /* fflags */
+        if (s->fs == 0 || !(s->misa & MCPUID_F))
+            return -1;
         s->fflags = val & 0x1f;
         s->fs = 3;
         break;
     case 0x002: /* frm */
+        if (s->fs == 0 || !(s->misa & MCPUID_F))
+            return -1;
         set_frm(s, val & 7);
         s->fs = 3;
         break;
     case 0x003: /* fcsr */
+        if (s->fs == 0 || !(s->misa & MCPUID_F))
+            return -1;
         set_frm(s, (val >> 5) & 7);
         s->fflags = val & 0x1f;
         s->fs = 3;
