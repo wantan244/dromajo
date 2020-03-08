@@ -2280,7 +2280,7 @@ static void create_boot_rom(RISCVCPUState *s, const char *file, const uint64_t c
     create_csr64_recovery(rom, &code_pos, &data_pos, 0x301, s->misa | ((target_ulong)2 << 62)); // misa
 
     // All the remaining CSRs
-    if (s->fs) { // If the FPU is down, you can not recover flags
+    if ((s->misa & MCPUID_F) && s->fs) { // If the FPU is down, you can not recover flags
         create_csr12_recovery(rom, &code_pos, 0x001, s->fflags);
         // Only if fflags, otherwise it would raise an illegal instruction
         create_csr12_recovery(rom, &code_pos, 0x002, s->frm);
