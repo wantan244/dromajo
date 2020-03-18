@@ -1133,12 +1133,15 @@ int no_inline glue(riscv_cpu_interp, XLEN)(RISCVCPUState *s, int n_cycles)
                     val = (intx_t)((intx_t)val * (intx_t)val2);
                     break;
                 case 1: /* mulh */
+                    goto illegal_insn;
                     val = (intx_t)glue(mulh, XLEN)(val, val2);
                     break;
                 case 2:/* mulhsu */
+                    goto illegal_insn;
                     val = (intx_t)glue(mulhsu, XLEN)(val, val2);
                     break;
                 case 3:/* mulhu */
+                    goto illegal_insn;
                     val = (intx_t)glue(mulhu, XLEN)(val, val2);
                     break;
                 case 4:/* div */
