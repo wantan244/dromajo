@@ -108,6 +108,9 @@ struct RISCVMachine {
     /* Enable BP host */
     bool host;
 
+    /* Dump Period */
+    uint64_t dump_period;
+
     /* Extension state, not used by Dromajo itself */
     void *ext_state;
 };

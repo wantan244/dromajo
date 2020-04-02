@@ -614,7 +614,8 @@ static void usage(const char *prog, const char *msg)
             "       --plic START:SIZE set PLIC start address and size (defaults to 0x%lx:0x%lx)\n"
             "       --clint START:SIZE set CLINT start address and size (defaults to 0x%lx:0x%lx)\n"
             "       --custom_extension add X extension to isa\n"
-            "       --host enable BlackParrot Host\n",
+            "       --host enable BlackParrot Host\n"
+            "       --dump_period dump the state evey N instructions\n",
             msg,
             prog,
             (long)BOOT_BASE_ADDR, (long)RAM_BASE_ADDR,
@@ -673,6 +674,7 @@ RISCVMachine *virt_machine_main(int argc, char **argv)
     uint64_t    clint_size_override      = 0;
     bool        custom_extension         = false;
     bool        host                     = false;
+    uint64_t    dump_period              = 0;
 
     dromajo_stdout = stdout;
     dromajo_stderr = stderr;
@@ -701,6 +703,7 @@ RISCVMachine *virt_machine_main(int argc, char **argv)
             {"clint",                   required_argument, 0,  'C' }, // CFG
             {"custom_extension",              no_argument, 0,  'u' }, // CFG
             {"host",                          no_argument, 0,  'h' }, // CFG
+            {"dump_period",             required_argument, 0,  'e' }, // CFG
             {0,                         0,                 0,  0 }
         };
 
@@ -842,6 +845,10 @@ RISCVMachine *virt_machine_main(int argc, char **argv)
 
         case 'h':
             host = true;
+            break;
+
+        case 'e':
+            dump_period = (uint64_t) atoll(optarg);
             break;
 
         default:
@@ -1009,7 +1016,9 @@ RISCVMachine *virt_machine_main(int argc, char **argv)
 
     // ISA modifications
     p->custom_extension = custom_extension;
+
     p->host = host;
+    p->dump_period = dump_period;
 
     RISCVMachine *s = virt_machine_init(p);
     if (!s)

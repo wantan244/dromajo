@@ -59,6 +59,15 @@ int iterate_core(RISCVMachine *m, int hartid)
     int      priv       = riscv_get_priv_level(cpu);
     uint32_t insn_raw   = -1;
     (void) riscv_read_insn(cpu, &insn_raw, last_pc);
+
+    uint64_t instret = cpu->minstret;
+    if(m->dump_period != 0 && (instret % m->dump_period == 0) &&
+       m->common.snapshot_save_name && !cpu->debug_mode) {
+        std::string dump_name = std::string(m->common.snapshot_save_name);
+        dump_name += '.' + std::to_string(instret);
+        virt_machine_serialize(m, dump_name.c_str());
+    }
+
     int      keep_going = virt_machine_run(m, hartid);
 
     if (last_pc == virt_machine_get_pc(m, hartid))

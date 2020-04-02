@@ -170,6 +170,9 @@ typedef struct {
     /* Enable BP Host */
     bool host;
 
+    /* Dump Period */
+    uint64_t dump_period;
+
     uint64_t physical_addr_len;
 
     char    *logfile; // If non-zero, all output goes here, stderr and stdout

@@ -257,6 +257,8 @@ int no_inline glue(riscv_cpu_interp, XLEN)(RISCVCPUState *s, int n_cycles)
     s->most_recently_written_fp_reg = -1;
     s->info = ctf_nop;
 
+    BOOL tick_counters = !(s->debug_mode);
+
     if (n_cycles == 0)
         return 0;
     insn_counter_addend = s->insn_counter + n_cycles;
@@ -1878,7 +1880,7 @@ done_interp:
 
 the_end:
     s->insn_counter = GET_INSN_COUNTER();
-    if (!s->stop_the_counter) {
+    if (tick_counters) {
       int delta = s->insn_counter - insn_counter_start;
       assert(delta >= 0);
       s->mcycle += delta;
