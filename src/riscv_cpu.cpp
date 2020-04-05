@@ -1887,7 +1887,7 @@ RISCVCPUState *riscv_cpu_init(RISCVMachine *machine, int hartid)
                  ((uint64_t)2 << MSTATUS_SXL_SHIFT) |
                  (3 << MSTATUS_MPP_SHIFT);
     s->plic_enable_irq = 0;
-    s->misa |= MCPUID_SUPER | MCPUID_USER | MCPUID_I | MCPUID_M | MCPUID_A;
+    s->misa |= MCPUID_SUPER | MCPUID_USER | MCPUID_I | MCPUID_M | MCPUID_A | MCPUID_F | MCPUID_D;
     s->most_recently_written_reg = -1;
 #if FLEN >= 32
     s->most_recently_written_fp_reg = -1;
@@ -1904,7 +1904,7 @@ RISCVCPUState *riscv_cpu_init(RISCVMachine *machine, int hartid)
     if (machine->custom_extension)
         s->misa |= MCPUID_X;
 
-    s->misa = MCPUID_SUPER | MCPUID_USER | MCPUID_I | MCPUID_M | MCPUID_A;
+    s->misa = MCPUID_SUPER | MCPUID_USER | MCPUID_I | MCPUID_M | MCPUID_A | MCPUID_F | MCPUID_D;
     printf("misa: %x\n", s->misa);
     s->mvendorid = 11 * 128 + 101; // Esperanto JEDEC number 101 in bank 11 (Change for your own)
     s->marchid   = (1ULL << 63) | 2;
