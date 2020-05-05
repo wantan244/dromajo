@@ -46,7 +46,7 @@
 
 int iterate_core(RISCVMachine *m, int hartid)
 {
-    if (m->common.maxinsns-- <= 0)
+    if (m->common.maxinsns == m->cpu_state[hartid]->minstret)
         /* Succeed after N instructions without failure. */
         return 0;
 
