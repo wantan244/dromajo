@@ -1188,7 +1188,7 @@ RISCVMachine *virt_machine_init(const VirtMachineParams *p)
     /* RAM */
     cpu_register_ram(s->mem_map, 0, 4096, 0); // Have memory at 0 for uaccess-etcsr to pass
     cpu_register_ram(s->mem_map, s->ram_base_addr, s->ram_size, 0);
-    cpu_register_ram(s->mem_map, ROM_BASE_ADDR, ROM_SIZE, 0);
+    cpu_register_ram(s->mem_map, ROM_BASE_ADDR, (ROM_SIZE * s->ncpus), 0);
 
     for (int i = 0; i < s->ncpus; ++i) {
         s->cpu_state[i]->physical_addr_len = p->physical_addr_len;
@@ -1325,7 +1325,7 @@ RISCVMachine *virt_machine_init(const VirtMachineParams *p)
       }
 
       uint8_t *ram_ptr  = get_ram_ptr(s, ROM_BASE_ADDR);
-      for(int i=0;i<ROM_SIZE/4;++i) {
+      for(int i=0;i<(ROM_SIZE * s->ncpus)/4;++i) {
         uint32_t *q_base = (uint32_t *)(ram_ptr + (BOOT_BASE_ADDR - ROM_BASE_ADDR));
         fprintf(fd,"@%06x %08x\n",i, q_base[i]);
       }
@@ -1357,21 +1357,12 @@ void virt_machine_end(RISCVMachine *s)
 
 void virt_machine_serialize(RISCVMachine *m, const char *dump_name)
 {
-    RISCVCPUState *s = m->cpu_state[0]; // FIXME: MULTICORE
-
-    fprintf(dromajo_stderr, "plic: %x %x timecmp=%llx\n",
-            m->plic_pending_irq, m->plic_served_irq, (unsigned long long)s->timecmp);
-
-    assert(m->ncpus == 1); // FIXME: riscv_cpu_serialize must be patched for multicore
-    riscv_cpu_serialize(s, dump_name, m->clint_base_addr);
+    riscv_cpu_serialize(m, dump_name, m->clint_base_addr);
 }
 
 void virt_machine_deserialize(RISCVMachine *m, const char *dump_name)
 {
-    RISCVCPUState *s = m->cpu_state[0]; // FIXME: MULTICORE
-
-    assert(m->ncpus == 1); // FIXME: riscv_cpu_serialize must be patched for multicore
-    riscv_cpu_deserialize(s, dump_name);
+    riscv_cpu_deserialize(m, dump_name);
 }
 
 int virt_machine_get_sleep_duration(RISCVMachine *m, int hartid, int ms_delay)

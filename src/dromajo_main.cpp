@@ -900,7 +900,7 @@ RISCVMachine *virt_machine_main(int argc, char **argv)
 
     if (ncpus)
         p->ncpus = ncpus;
-    if (p->ncpus>=MAX_CPUS)
+    if (p->ncpus > MAX_CPUS)
         usage(prog, "ncpus limit reached (MAX_CPUS).  Increase MAX_CPUS");
 
     if (p->ncpus == 0)

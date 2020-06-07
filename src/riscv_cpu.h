@@ -305,9 +305,9 @@ int riscv_benchmark_exit_code(RISCVCPUState *s);
 
 #include "riscv_machine.h"
 #include "bp_config.h"
-void bp_serialize(RISCVCPUState *s, const char *dump_name);
-void riscv_cpu_serialize(RISCVCPUState *s, const char *dump_name, const uint64_t clint_base_addr);
-void riscv_cpu_deserialize(RISCVCPUState *s, const char *dump_name);
+void bp_serialize(RISCVMachine *m, const char *dump_name);
+void riscv_cpu_serialize(RISCVMachine *m, const char *dump_name, const uint64_t clint_base_addr);
+void riscv_cpu_deserialize(RISCVMachine *m, const char *dump_name);
 
 int riscv_cpu_read_memory(RISCVCPUState *s, mem_uint_t *pval, target_ulong addr, int size_log2);
 int riscv_cpu_write_memory(RISCVCPUState *s, target_ulong addr, mem_uint_t val, int size_log2);
