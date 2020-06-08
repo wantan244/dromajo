@@ -1073,7 +1073,7 @@ static int csr_read(RISCVCPUState *s, target_ulong *pval, uint32_t csr,
             goto invalid_csr;
         val = (int64_t)s->minstret;
         break;
-    case 0xb03:
+    /*case 0xb03:
     case 0xc03:
     case 0xb04:
     case 0xc04:
@@ -1134,7 +1134,7 @@ static int csr_read(RISCVCPUState *s, target_ulong *pval, uint32_t csr,
         if (!counter_access_ok(s, csr))
             goto invalid_csr;
         val = 0; // mhpmcounter3..31
-        break;
+        break;*/
 
     case 0xf14:
         val = s->mhartid;
@@ -1148,7 +1148,7 @@ static int csr_read(RISCVCPUState *s, target_ulong *pval, uint32_t csr,
     case 0xf11:
         val = s->mvendorid;
         break;
-    case 0x323:
+    /*case 0x323:
     case 0x324:
     case 0x325:
     case 0x326:
@@ -1178,7 +1178,7 @@ static int csr_read(RISCVCPUState *s, target_ulong *pval, uint32_t csr,
     case 0x33e:
     case 0x33f:
         val = s->mhpmevent[csr & 0x1F];
-        break;
+        break;*/
 
     //case CSR_PMPCFG(0): // NB: 1 and 3 are _illegal_ in RV64
     //case CSR_PMPCFG(2):
@@ -1347,7 +1347,7 @@ static int csr_write(RISCVCPUState *s, uint32_t csr, target_ulong val)
         s->stvec = val & ~2;
         break;
     case 0x106:
-        s->scounteren = val;
+        s->scounteren = val & 0x5;
         break;
     case 0x140:
         s->sscratch = val;
@@ -1403,7 +1403,7 @@ static int csr_write(RISCVCPUState *s, uint32_t csr, target_ulong val)
         s->mtvec = val & ((1ull << s->physical_addr_len) - 3); // mtvec[1] === 0
         break;
     case 0x306:
-        s->mcounteren = val;
+        s->mcounteren = val & 0x5;
         break;
     case 0x320:
         s->mcountinhibit = val & ~2;
@@ -1469,7 +1469,7 @@ static int csr_write(RISCVCPUState *s, uint32_t csr, target_ulong val)
         s->dscratch = val;
         break;
 
-    case 0x323:
+    /*case 0x323:
     case 0x324:
     case 0x325:
     case 0x326:
@@ -1499,7 +1499,7 @@ static int csr_write(RISCVCPUState *s, uint32_t csr, target_ulong val)
     case 0x33e:
     case 0x33f:
         s->mhpmevent[csr & 0x1F] = val & (HPM_EVENT_SETMASK | HPM_EVENT_EVENTMASK);
-        break;
+        break;*/
 
     //case CSR_PMPCFG(0): // NB: 1 and 3 are _illegal_ in RV64
     //case CSR_PMPCFG(2): {
@@ -1557,7 +1557,7 @@ static int csr_write(RISCVCPUState *s, uint32_t csr, target_ulong val)
     case 0xb02: /* minstret */
         s->minstret = val;
         break;
-    case 0xb03:
+    /*case 0xb03:
     case 0xb04:
     case 0xb05:
     case 0xb06:
@@ -1587,7 +1587,7 @@ static int csr_write(RISCVCPUState *s, uint32_t csr, target_ulong val)
     case 0xb1e:
     case 0xb1f:
         // Allow, but ignore to write to performance counters mhpmcounter
-        break;
+        break;*/
 
     default:
         if (s->machine->hooks.csr_write)
