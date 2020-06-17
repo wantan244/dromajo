@@ -342,7 +342,7 @@ int riscv_cpu_get_phys_addr(RISCVCPUState *s,
         priv = s->priv;
     }
 
-    if (priv == PRV_M) {
+    if (priv == PRV_M || s->debug_mode) {
         *ppaddr = vaddr;
         return 0;
     }
