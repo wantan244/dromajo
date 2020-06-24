@@ -2450,9 +2450,6 @@ void bp_serialize(RISCVMachine *m, const char *dump_name, const uint64_t clint_b
         print_bp(conf_fd, i, (clint_base_addr-bp_cfg_base_addr_gp) + 0xb000, (unsigned long long)(s->mip & MIP_MEIP)/MIP_MEIP);
         print_bp(conf_fd, i, (clint_base_addr-bp_cfg_base_addr_gp) + 0xbff8, (unsigned long long)(s->mcycle/RTC_FREQ_DIV));
     }
-
-    //Finish
-    fprintf(conf_fd, "ff_0000000000_0000000000000000\n");
 }
 
 void riscv_cpu_serialize(RISCVMachine *m, const char *dump_name, const uint64_t clint_base_addr)
