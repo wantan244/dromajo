@@ -1919,7 +1919,7 @@ RISCVCPUState *riscv_cpu_init(RISCVMachine *machine, int hartid)
         s->misa |= MCPUID_X;
 
     // Override the ISA value here
-    s->misa = MCPUID_SUPER | MCPUID_USER | MCPUID_I | MCPUID_M | MCPUID_A;// | MCPUID_F | MCPUID_D;
+    s->misa = MCPUID_SUPER | MCPUID_USER | MCPUID_I | MCPUID_M | MCPUID_A | MCPUID_F | MCPUID_D;
     s->mvendorid = 11 * 128 + 101; // Esperanto JEDEC number 101 in bank 11 (Change for your own)
     s->marchid   = (1ULL << 63) | 2;
     s->mimpid    = 1;
