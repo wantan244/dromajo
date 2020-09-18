@@ -277,6 +277,11 @@ int dromajo_cosim_step(dromajo_cosim_state_t *state,
         emu_pc   = riscv_get_pc(s);
         riscv_read_insn(s, &emu_insn, emu_pc);
 
+        if(s->debug_mode) {
+          riscv_cpu_interp64(s, 1);
+          continue;
+        }
+
         if ((emu_insn & 3) != 3)
             emu_insn &= 0xFFFF;
 
