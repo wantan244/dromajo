@@ -1005,9 +1005,9 @@ int no_inline glue(riscv_cpu_interp, XLEN)(RISCVCPUState *s, int n_cycles) {
                     funct3 = (insn >> 12) & 7;
                     switch (funct3) {
                         case 0: /* mul */ val = (intx_t)((intx_t)val * (intx_t)val2); break;
-                        case 1: /* mulh */ val = (intx_t)glue(mulh, XLEN)(val, val2); break;
-                        case 2: /* mulhsu */ val = (intx_t)glue(mulhsu, XLEN)(val, val2); break;
-                        case 3: /* mulhu */ val = (intx_t)glue(mulhu, XLEN)(val, val2); break;
+                        case 1: /* mulh */ goto illegal_insn; val = (intx_t)glue(mulh, XLEN)(val, val2); break;
+                        case 2: /* mulhsu */ goto illegal_insn; val = (intx_t)glue(mulhsu, XLEN)(val, val2); break;
+                        case 3: /* mulhu */ goto illegal_insn; val = (intx_t)glue(mulhu, XLEN)(val, val2); break;
                         case 4: /* div */ val = glue(div, XLEN)(val, val2); break;
                         case 5: /* divu */ val = (intx_t)glue(divu, XLEN)(val, val2); break;
                         case 6: /* rem */ val = glue(rem, XLEN)(val, val2); break;
@@ -1337,6 +1337,7 @@ int no_inline glue(riscv_cpu_interp, XLEN)(RISCVCPUState *s, int n_cycles) {
             case 0x14: /* amomax.w */                                                   \
             case 0x18: /* amominu.w */                                                  \
             case 0x1c: /* amomaxu.w */                                                  \
+                goto illegal_insn;                                                      \
                 if (target_read_u##size(s, &rval, addr)) {                              \
                     s->pending_exception += 2; /* LD -> ST */                           \
                     goto mmu_exception;                                                 \
@@ -1643,7 +1644,7 @@ int no_inline glue(riscv_cpu_interp, XLEN)(RISCVCPUState *s, int n_cycles) {
     } /* end of main loop */
 illegal_insn:
     s->pending_exception = CAUSE_ILLEGAL_INSTRUCTION;
-    s->pending_tval      = 0;
+    s->pending_tval      = insn;
 mmu_exception:
 exception:
     s->pc = GET_PC();
