@@ -1307,6 +1307,9 @@ int no_inline glue(riscv_cpu_interp, XLEN)(RISCVCPUState *s, int n_cycles) {
                     goto illegal_insn;                                                  \
                 if (target_read_u##size(s, &rval, addr))                                \
                     goto mmu_exception;                                                 \
+                    for(int i=0; i < s->machine->ncpus; i++)                            \
+                        if(s->machine->cpu_state[i]->load_res == addr)                  \
+                            s->machine->cpu_state[i]->load_res = ~0;                    \
                 val         = (int##size##_t)rval;                                      \
                 s->load_res = addr;                                                     \
                 break;                                                                  \
