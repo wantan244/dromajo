@@ -169,13 +169,14 @@ static inline void handle_dut_overrides(RISCVCPUState *s, uint64_t mmio_start, u
  * MSB indicates an asynchronous interrupt, synchronous exception
  * otherwise.
  */
-void dromajo_cosim_raise_trap(dromajo_cosim_state_t *state, int hartid, int64_t cause) {
+void dromajo_cosim_raise_trap(dromajo_cosim_state_t *state, int hartid, int64_t cause, bool verbose) {
     VirtMachine *m = (VirtMachine *)state;
 
     if (cause < 0) {
         assert(m->pending_interrupt == -1);
         m->pending_interrupt = cause & 63;
-        fprintf(dromajo_stderr, "DUT raised interrupt %d\n", m->pending_interrupt);
+        if (verbose)
+            fprintf(dromajo_stderr, "DUT raised interrupt %d\n", m->pending_interrupt);
     } else {
         m->pending_exception = cause;
     }
@@ -197,7 +198,7 @@ void dromajo_cosim_raise_trap(dromajo_cosim_state_t *state, int hartid, int64_t 
  * with the expected values.
  */
 int dromajo_cosim_step(dromajo_cosim_state_t *state, int hartid, uint64_t dut_pc, uint32_t dut_insn, uint64_t dut_wdata,
-                       uint64_t dut_mstatus, bool check) {
+                       uint64_t dut_mstatus, bool check, bool verbose) {
     RISCVMachine * r = (RISCVMachine *)state;
     RISCVCPUState *s = r->cpu_state[hartid];
     uint64_t       emu_pc, emu_wdata = 0;
@@ -205,7 +206,6 @@ int dromajo_cosim_step(dromajo_cosim_state_t *state, int hartid, uint64_t dut_pc
     uint32_t       emu_insn;
     bool           emu_wrote_data = false;
     int            exit_code      = 0;
-    bool           verbose        = true;
     int            iregno, fregno;
 
     /* Succeed after N instructions without failure. */
@@ -248,7 +248,8 @@ int dromajo_cosim_step(dromajo_cosim_state_t *state, int hartid, uint64_t dut_pc
             /* On the DUT, the interrupt can race the exception.
                Let's try to match that behavior */
 
-            fprintf(dromajo_stderr, "DUT also raised exception %d\n", r->common.pending_exception);
+            if (verbose)
+                fprintf(dromajo_stderr, "DUT also raised exception %d\n", r->common.pending_exception);
             riscv_cpu_interp64(s, 1);  // Advance into the exception
 
             int cause = s->priv == PRV_S ? s->scause : s->mcause;
@@ -303,7 +304,7 @@ int dromajo_cosim_step(dromajo_cosim_state_t *state, int hartid, uint64_t dut_pc
         emu_wrote_data = 1;
         if (verbose)
             fprintf(dromajo_stderr, "f%-2d 0x%016" PRIx64, fregno, emu_wdata);
-    } else
+    } else if (verbose)
         fprintf(dromajo_stderr, "                      ");
 
     if (verbose)
