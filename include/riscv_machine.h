@@ -40,6 +40,9 @@
 #ifndef RISCV_MACHINE_H
 #define RISCV_MACHINE_H
 
+#include <queue>
+#include <thread>
+
 #include "machine.h"
 #include "riscv_cpu.h"
 #include "virtio.h"
@@ -104,6 +107,9 @@ struct RISCVMachine {
 
     /* Extension state, not used by Dromajo itself */
     void *ext_state;
+
+   /* Enable BlackParrot Host */
+   bool host;
 };
 
 #define PLIC_BASE_ADDR 0x10000000
@@ -111,6 +117,12 @@ struct RISCVMachine {
 
 #define CLINT_BASE_ADDR 0x02000000
 #define CLINT_SIZE      0x000c0000
+
+#define HOST_BASE_ADDR 0x00100000
+#define HOST_SIZE      0x00100000
+#define HOST_GETCHAR   0x0
+#define HOST_PUTCHAR   0x1000
+#define HOST_FINISH    0x2000
 
 // CPU_FREQUENCY is a u32, so less than 4GHz
 #define CPU_FREQUENCY 2000000000

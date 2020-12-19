@@ -564,7 +564,8 @@ static void usage(const char *prog, const char *msg) {
             "       --mmio_range START:END [START,END) mmio range for cosim (overridden by config file)\n"
             "       --plic START:SIZE set PLIC start address and size (defaults to 0x%lx:0x%lx)\n"
             "       --clint START:SIZE set CLINT start address and size (defaults to 0x%lx:0x%lx)\n"
-            "       --custom_extension add X extension to isa\n",
+            "       --custom_extension add X extension to isa\n"
+            "       --host enable BlackParrot host\n",
             msg,
             CONFIG_VERSION,
             prog,
@@ -623,6 +624,7 @@ RISCVMachine *virt_machine_main(int argc, char **argv) {
     uint64_t    clint_base_addr_override = 0;
     uint64_t    clint_size_override      = 0;
     bool        custom_extension         = false;
+    bool        host                     = false;
     const char *simpoint_file            = 0;
 
     dromajo_stdout = stdout;
@@ -653,6 +655,7 @@ RISCVMachine *virt_machine_main(int argc, char **argv) {
             {"plic",                    required_argument, 0,  'p' }, // CFG
             {"clint",                   required_argument, 0,  'C' }, // CFG
             {"custom_extension",              no_argument, 0,  'u' }, // CFG
+            {"host",                          no_argument, 0,  'h' },
             {0,                         0,                 0,  0 }
         };
         // clang-format on
@@ -794,6 +797,8 @@ RISCVMachine *virt_machine_main(int argc, char **argv) {
             } break;
 
             case 'u': custom_extension = true; break;
+
+            case 'h': host = true; break;
 
             default: usage(prog, "I'm not having this argument");
         }
@@ -956,6 +961,9 @@ RISCVMachine *virt_machine_main(int argc, char **argv) {
 
     // ISA modifications
     p->custom_extension = custom_extension;
+
+    // BlackParrot Host
+    p->host = host;
 
     RISCVMachine *s = virt_machine_init(p);
     if (!s)
