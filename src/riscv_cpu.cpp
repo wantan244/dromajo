@@ -1534,6 +1534,12 @@ static void handle_sret(RISCVCPUState *s) {
     int spp = (s->mstatus & MSTATUS_SPP) >> MSTATUS_SPP_SHIFT;
     s->mstatus &= ~MSTATUS_SPP;
 
+    // Clear MPRV on non m-mode sret
+    switch (spp) {
+    case PRV_M: break;
+    default: s->mstatus &= ~MSTATUS_MPRV;
+    }
+
     set_priv(s, spp);
     s->pc = s->sepc;
 }
@@ -1546,6 +1552,12 @@ static void handle_mret(RISCVCPUState *s) {
 
     int mpp = (s->mstatus & MSTATUS_MPP) >> MSTATUS_MPP_SHIFT;
     s->mstatus &= ~MSTATUS_MPP;
+
+    // Clear MPRV on non m-mode mret
+    switch (mpp) {
+    case PRV_M: break;
+    default: s->mstatus &= ~MSTATUS_MPRV;
+    }
 
     set_priv(s, mpp);
     s->pc = s->mepc;
