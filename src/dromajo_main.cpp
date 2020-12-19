@@ -954,6 +954,7 @@ RISCVMachine *virt_machine_main(int argc, char **argv) {
         p->plic_size = plic_size_override;
 
     // CLINT params
+    p->clint_size = CLINT_SIZE + ((p->ncpus - 1) << CORE_SHIFT);
     if (clint_base_addr_override)
         p->clint_base_addr = clint_base_addr_override;
     if (clint_size_override)
