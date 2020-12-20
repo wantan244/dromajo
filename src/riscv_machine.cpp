@@ -1138,6 +1138,7 @@ RISCVMachine *virt_machine_init(const VirtMachineParams *p) {
     s->clint_size      = p->clint_size;
 
     s->host = p->host;
+    s->checkpoint_period = p->checkpoint_period;
 
     if (MAX_CPUS < s->ncpus) {
         vm_error("ERROR: ncpus:%d exceeds maximum MAX_CPU\n", s->ncpus);
@@ -1314,8 +1315,9 @@ RISCVMachine *virt_machine_init(const VirtMachineParams *p) {
 }
 
 void virt_machine_end(RISCVMachine *s) {
-    if (s->common.snapshot_save_name)
+    if (s->common.snapshot_save_name && s->checkpoint_period == 0) {
         virt_machine_serialize(s, s->common.snapshot_save_name);
+    }
 
     /* XXX: stop all */
     for (int i = 0; i < s->ncpus; ++i) {

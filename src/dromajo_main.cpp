@@ -565,7 +565,8 @@ static void usage(const char *prog, const char *msg) {
             "       --plic START:SIZE set PLIC start address and size (defaults to 0x%lx:0x%lx)\n"
             "       --clint START:SIZE set CLINT start address and size (defaults to 0x%lx:0x%lx)\n"
             "       --custom_extension add X extension to isa\n"
-            "       --host enable BlackParrot host\n",
+            "       --host enable BlackParrot host\n"
+            "       --checkpoint_period creates a checkpoint evey N instructions\n",
             msg,
             CONFIG_VERSION,
             prog,
@@ -625,6 +626,7 @@ RISCVMachine *virt_machine_main(int argc, char **argv) {
     uint64_t    clint_size_override      = 0;
     bool        custom_extension         = false;
     bool        host                     = false;
+    uint64_t    checkpoint_period        = 0;
     const char *simpoint_file            = 0;
 
     dromajo_stdout = stdout;
@@ -656,6 +658,7 @@ RISCVMachine *virt_machine_main(int argc, char **argv) {
             {"clint",                   required_argument, 0,  'C' }, // CFG
             {"custom_extension",              no_argument, 0,  'u' }, // CFG
             {"host",                          no_argument, 0,  'h' },
+            {"checkpoint_period",       required_argument, 0,  'e' },
             {0,                         0,                 0,  0 }
         };
         // clang-format on
@@ -799,6 +802,21 @@ RISCVMachine *virt_machine_main(int argc, char **argv) {
             case 'u': custom_extension = true; break;
 
             case 'h': host = true; break;
+
+            case 'e':
+                if(checkpoint_period)
+                    usage(prog, "already had a checkpoint period");
+                checkpoint_period = (uint64_t)atoll(optarg);
+                {
+                    char last = optarg[strlen(optarg) - 1];
+                    if (last == 'k' || last == 'K')
+                        checkpoint_period *= 1000;
+                    else if (last == 'm' || last == 'M')
+                        checkpoint_period *= 1000000;
+                    else if (last == 'g' || last == 'G')
+                        checkpoint_period *= 1000000000;
+                }
+                break;
 
             default: usage(prog, "I'm not having this argument");
         }
@@ -965,6 +983,9 @@ RISCVMachine *virt_machine_main(int argc, char **argv) {
 
     // BlackParrot Host
     p->host = host;
+
+    // Checkpoint Period
+    p->checkpoint_period = checkpoint_period;
 
     RISCVMachine *s = virt_machine_init(p);
     if (!s)

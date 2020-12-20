@@ -188,6 +188,9 @@ typedef struct {
     /* Enable BlackParrot Host */
     bool host;
 
+    /* Periodically create checkpoints */
+    uint64_t checkpoint_period;
+
     uint64_t physical_addr_len;
 
     char *logfile;  // If non-zero, all output goes here, stderr and stdout

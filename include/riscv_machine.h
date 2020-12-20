@@ -108,8 +108,11 @@ struct RISCVMachine {
     /* Extension state, not used by Dromajo itself */
     void *ext_state;
 
-   /* Enable BlackParrot Host */
-   bool host;
+    /* Enable BlackParrot Host */
+    bool host;
+
+    /* Periodically create checkpoints */
+    uint64_t checkpoint_period;
 };
 
 #define PLIC_BASE_ADDR 0x10000000
