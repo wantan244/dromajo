@@ -180,6 +180,7 @@ static inline uint64_t track_iread(RISCVCPUState *s, uint64_t vaddr, uint64_t pa
  * modes, which by default have none, and can revoke permissions from
  * M-mode, which by default has full permissions." */
 bool riscv_cpu_pmp_access_ok(RISCVCPUState *s, uint64_t paddr, size_t size, pmpcfg_t perm) {
+    return true;
     int priv;
 
     /* rv64mi-p-access expects illegal physical addresses to fail. */
@@ -977,6 +978,7 @@ static int csr_read(RISCVCPUState *s, target_ulong *pval, uint32_t csr, BOOL wil
         case 0xc1e:
         case 0xb1f:
         case 0xc1f:
+            goto invalid_csr;
             if (!counter_access_ok(s, csr))
                 goto invalid_csr;
             val = 0;  // mhpmcounter3..31
@@ -1014,10 +1016,10 @@ static int csr_read(RISCVCPUState *s, target_ulong *pval, uint32_t csr, BOOL wil
         case 0x33c:
         case 0x33d:
         case 0x33e:
-        case 0x33f: val = s->mhpmevent[csr & 0x1F]; break;
+        case 0x33f: goto invalid_csr; val = s->mhpmevent[csr & 0x1F]; break;
 
         case CSR_PMPCFG(0):  // NB: 1 and 3 are _illegal_ in RV64
-        case CSR_PMPCFG(2): val = s->csr_pmpcfg[csr - CSR_PMPCFG(0)]; break;
+        case CSR_PMPCFG(2): goto invalid_csr; val = s->csr_pmpcfg[csr - CSR_PMPCFG(0)]; break;
 
         case CSR_PMPADDR(0):  // NB: *must* support either none or all
         case CSR_PMPADDR(1):
@@ -1034,7 +1036,7 @@ static int csr_read(RISCVCPUState *s, target_ulong *pval, uint32_t csr, BOOL wil
         case CSR_PMPADDR(12):
         case CSR_PMPADDR(13):
         case CSR_PMPADDR(14):
-        case CSR_PMPADDR(15): val = s->csr_pmpaddr[csr - CSR_PMPADDR(0)]; break;
+        case CSR_PMPADDR(15): goto invalid_csr; val = s->csr_pmpaddr[csr - CSR_PMPADDR(0)]; break;
 #ifdef SIMPOINT_BB
         case 0x8C2: val = 0; break;
 #endif
@@ -1167,7 +1169,7 @@ static int csr_write(RISCVCPUState *s, uint32_t csr, target_ulong val) {
                 val &= ~255 + 1;
             s->stvec = val & ~2;
             break;
-        case 0x106: s->scounteren = val; break;
+        case 0x106: s->scounteren = val & 0x5; break;
         case 0x140: s->sscratch = val; break;
         case 0x141:
             s->sepc = val & (s->misa & MCPUID_C ? ~1 : ~3);
@@ -1215,7 +1217,7 @@ static int csr_write(RISCVCPUState *s, uint32_t csr, target_ulong val) {
                 val &= ~255 + 1;
             s->mtvec = val & ((1ull << s->physical_addr_len) - 3);  // mtvec[1] === 0
             break;
-        case 0x306: s->mcounteren = val; break;
+        case 0x306: s->mcounteren = val & 0x5; break;
         case 0x320: s->mcountinhibit = val & ~2; break;
         case 0x340: s->mscratch = val; break;
         case 0x341:
@@ -1303,10 +1305,11 @@ static int csr_write(RISCVCPUState *s, uint32_t csr, target_ulong val) {
         case 0x33c:
         case 0x33d:
         case 0x33e:
-        case 0x33f: s->mhpmevent[csr & 0x1F] = val & (HPM_EVENT_SETMASK | HPM_EVENT_EVENTMASK); break;
+        case 0x33f: goto invalid_csr; s->mhpmevent[csr & 0x1F] = val & (HPM_EVENT_SETMASK | HPM_EVENT_EVENTMASK); break;
 
         case CSR_PMPCFG(0):  // NB: 1 and 3 are _illegal_ in RV64
         case CSR_PMPCFG(2): {
+            goto invalid_csr;
             assert(PMP_N % 8 == 0);
             int c = csr - CSR_PMPCFG(0);
 
@@ -1346,6 +1349,7 @@ static int csr_write(RISCVCPUState *s, uint32_t csr, target_ulong val) {
         case CSR_PMPADDR(13):
         case CSR_PMPADDR(14):
         case CSR_PMPADDR(15):
+            goto invalid_csr;
             if (PMP_N <= csr - CSR_PMPADDR(0))
                 break;
 
@@ -1386,6 +1390,7 @@ static int csr_write(RISCVCPUState *s, uint32_t csr, target_ulong val) {
         case 0xb1d:
         case 0xb1e:
         case 0xb1f:
+            goto invalid_csr;
             // Allow, but ignore to write to performance counters mhpmcounter
             break;
 #ifdef SIMPOINT_BB
@@ -2055,11 +2060,11 @@ void create_boot_rom(RISCVMachine *m, const char *file, const uint64_t clint_bas
     // Already done before CLINT. create_csr64_recovery(rom, &code_pos, &data_pos, 0xb00, s->insn_counter); // mcycle
     // create_csr64_recovery(rom, &code_pos, &data_pos, 0xb02, s->insn_counter); // instret
 
-    for (int i = 3; i < 32; ++i) {
-        create_csr12_recovery(rom, &code_pos, 0xb00 + i, 0);                           // reset mhpmcounter3..31
-        create_csr64_recovery(rom, &code_pos, &data_pos, 0x320 + i, s->mhpmevent[i], core_off);  // mhpmevent3..31
-    }
-    create_csr64_recovery(rom, &code_pos, &data_pos, 0x7a0, s->tselect, core_off);  // tselect
+    //for (int i = 3; i < 32; ++i) {
+    //    create_csr12_recovery(rom, &code_pos, 0xb00 + i, 0);                           // reset mhpmcounter3..31
+    //    create_csr64_recovery(rom, &code_pos, &data_pos, 0x320 + i, s->mhpmevent[i], core_off);  // mhpmevent3..31
+    //}
+    //create_csr64_recovery(rom, &code_pos, &data_pos, 0x7a0, s->tselect, core_off);  // tselect
     // FIXME: create_csr64_recovery(rom, &code_pos, &data_pos, 0x7a1, s->tdata1); // tdata1
     // FIXME: create_csr64_recovery(rom, &code_pos, &data_pos, 0x7a2, s->tdata2); // tdata2
     // FIXME: create_csr64_recovery(rom, &code_pos, &data_pos, 0x7a3, s->tdata3); // tdata3
@@ -2074,8 +2079,8 @@ void create_boot_rom(RISCVMachine *m, const char *file, const uint64_t clint_bas
     create_csr12_recovery(rom, &code_pos, 0x106, s->scounteren);
 
     // NB: restore addr before cfgs for fewer surprises!
-    for (int i = 0; i < 16; ++i) create_csr64_recovery(rom, &code_pos, &data_pos, CSR_PMPADDR(i), s->csr_pmpaddr[i], core_off);
-    for (int i = 0; i < 4; i += 2) create_csr64_recovery(rom, &code_pos, &data_pos, CSR_PMPCFG(i), s->csr_pmpcfg[i], core_off);
+    //for (int i = 0; i < 16; ++i) create_csr64_recovery(rom, &code_pos, &data_pos, CSR_PMPADDR(i), s->csr_pmpaddr[i], core_off);
+    //for (int i = 0; i < 4; i += 2) create_csr64_recovery(rom, &code_pos, &data_pos, CSR_PMPCFG(i), s->csr_pmpcfg[i], core_off);
 
     create_csr64_recovery(rom, &code_pos, &data_pos, 0x340, s->mscratch, core_off);
     create_csr64_recovery(rom, &code_pos, &data_pos, 0x341, s->mepc, core_off);
