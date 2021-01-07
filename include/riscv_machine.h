@@ -135,7 +135,7 @@ struct RISCVMachine {
 
 // CPU_FREQUENCY is a u32, so less than 4GHz
 #define CPU_FREQUENCY 2000000000
-#define RTC_FREQ      1000000
+#define RTC_FREQ      125000000
 
 #define RTC_FREQ_DIV (CPU_FREQUENCY / RTC_FREQ)
 
