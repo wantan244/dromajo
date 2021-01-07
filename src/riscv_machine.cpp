@@ -225,6 +225,7 @@ static void host_write(void *opaque, uint32_t offset, uint32_t val, int size_log
 
       const char* pass_fail = (val == 0)? "PASS" : "FAIL";
       printf("[CORE%d FSH] %s\n", hartid, pass_fail);
+      printf("\tinstret: %lld\n", m->cpu_state[hartid]->minstret);
 
       for(int i=0; i < m->ncpus; i++)
         if(core_finish->at(i) == false)
