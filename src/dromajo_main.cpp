@@ -565,6 +565,7 @@ static void usage(const char *prog, const char *msg) {
             "       --plic START:SIZE set PLIC start address and size (defaults to 0x%lx:0x%lx)\n"
             "       --clint START:SIZE set CLINT start address and size (defaults to 0x%lx:0x%lx)\n"
             "       --custom_extension add X extension to isa\n"
+            "       --enable_amo enables atomic instructions\n"
             "       --host enable BlackParrot host\n"
             "       --checkpoint_period creates a checkpoint evey N instructions\n",
             msg,
@@ -625,6 +626,7 @@ RISCVMachine *virt_machine_main(int argc, char **argv) {
     uint64_t    clint_base_addr_override = 0;
     uint64_t    clint_size_override      = 0;
     bool        custom_extension         = false;
+    bool        amo_en                   = false;
     bool        host                     = false;
     uint64_t    checkpoint_period        = 0;
     const char *simpoint_file            = 0;
@@ -657,6 +659,7 @@ RISCVMachine *virt_machine_main(int argc, char **argv) {
             {"plic",                    required_argument, 0,  'p' }, // CFG
             {"clint",                   required_argument, 0,  'C' }, // CFG
             {"custom_extension",              no_argument, 0,  'u' }, // CFG
+            {"enable_amo",                    no_argument, 0,  'a' },
             {"host",                          no_argument, 0,  'h' },
             {"checkpoint_period",       required_argument, 0,  'e' },
             {0,                         0,                 0,  0 }
@@ -800,6 +803,8 @@ RISCVMachine *virt_machine_main(int argc, char **argv) {
             } break;
 
             case 'u': custom_extension = true; break;
+
+            case 'a': amo_en = true; break;
 
             case 'h': host = true; break;
 
@@ -980,6 +985,9 @@ RISCVMachine *virt_machine_main(int argc, char **argv) {
 
     // ISA modifications
     p->custom_extension = custom_extension;
+
+    // AMO enable flag
+    p->amo_en = amo_en;
 
     // BlackParrot Host
     p->host = host;

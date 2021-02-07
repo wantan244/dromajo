@@ -185,6 +185,9 @@ typedef struct {
     /* Add to misa custom extensions */
     bool custom_extension;
 
+    /* Enable atomic instructions */
+    bool amo_en;
+
     /* Enable BlackParrot Host */
     bool host;
 

@@ -1138,6 +1138,7 @@ RISCVMachine *virt_machine_init(const VirtMachineParams *p) {
     s->clint_base_addr = p->clint_base_addr;
     s->clint_size      = p->clint_size;
 
+    s->amo_en = p->amo_en;
     s->host = p->host;
     s->checkpoint_period = p->checkpoint_period;
 

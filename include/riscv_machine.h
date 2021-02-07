@@ -108,6 +108,9 @@ struct RISCVMachine {
     /* Extension state, not used by Dromajo itself */
     void *ext_state;
 
+    /* Enable atomic instructions */
+    bool amo_en;
+
     /* Enable BlackParrot Host */
     bool host;
 

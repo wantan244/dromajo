@@ -1342,7 +1342,8 @@ int no_inline glue(riscv_cpu_interp, XLEN)(RISCVCPUState *s, int n_cycles) {
             case 0x14: /* amomax.w */                                                   \
             case 0x18: /* amominu.w */                                                  \
             case 0x1c: /* amomaxu.w */                                                  \
-                goto illegal_insn;                                                      \
+                if (!s->machine->amo_en)                                                \
+                    goto illegal_insn;                                                  \
                 if (target_read_u##size(s, &rval, addr)) {                              \
                     s->pending_exception += 2; /* LD -> ST */                           \
                     goto mmu_exception;                                                 \
