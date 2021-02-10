@@ -560,7 +560,7 @@ static void usage(const char *prog, const char *msg) {
             "       --bootrom load in a bootrom img file (default is dromajo bootrom)\n"
             "       --dtb load in a dtb file (default is dromajo dtb)\n"
             "       --compact_bootrom have dtb be directly after bootrom (default 256B after boot base)\n"
-            "       --reset_vector set reset vector (default 0x%lx)\n"
+            "       --reset_vector set reset vector for all cores (default 0x%lx)\n"
             "       --mmio_range START:END [START,END) mmio range for cosim (overridden by config file)\n"
             "       --plic START:SIZE set PLIC start address and size (defaults to 0x%lx:0x%lx)\n"
             "       --clint START:SIZE set CLINT start address and size (defaults to 0x%lx:0x%lx)\n"
@@ -568,6 +568,7 @@ static void usage(const char *prog, const char *msg) {
             "       --enable_amo enables atomic instructions\n"
             "       --host enable BlackParrot host\n"
             "       --checkpoint_period creates a checkpoint evey N instructions\n",
+            "       --clear_ids clear mvendorid, marchid, mimpid for all cores\n",
             msg,
             CONFIG_VERSION,
             prog,
@@ -630,6 +631,7 @@ RISCVMachine *virt_machine_main(int argc, char **argv) {
     bool        host                     = false;
     uint64_t    checkpoint_period        = 0;
     const char *simpoint_file            = 0;
+    bool        clear_ids                = false;
 
     dromajo_stdout = stdout;
     dromajo_stderr = stderr;
@@ -662,6 +664,7 @@ RISCVMachine *virt_machine_main(int argc, char **argv) {
             {"enable_amo",                    no_argument, 0,  'a' },
             {"host",                          no_argument, 0,  'h' },
             {"checkpoint_period",       required_argument, 0,  'e' },
+            {"clear_ids",                     no_argument, 0,  'L' }, // CFG
             {0,                         0,                 0,  0 }
         };
         // clang-format on
@@ -726,7 +729,12 @@ RISCVMachine *virt_machine_main(int argc, char **argv) {
 
             case 'D': dump_memories = true; break;
 
-            case 'M': memory_size_override = atoi(optarg); break;
+            case 'M':
+                if (optarg[0] == '0' && optarg[1] == 'x')
+                    memory_size_override = strtoll(optarg + 2, NULL, 16);
+                else
+                    memory_size_override = atoi(optarg);
+                break;
 
             case 'A':
                 if (optarg[0] != '0' || optarg[1] != 'x')
@@ -758,7 +766,8 @@ RISCVMachine *virt_machine_main(int argc, char **argv) {
                 if (!strchr(optarg, ':'))
                     usage(prog, "--mmio_range expects an argument like START:END");
 
-                char *mmio_start = strtok(optarg, ":");
+                char *copy       = strdup(optarg);
+                char *mmio_start = strtok(copy, ":");
                 char *mmio_end   = strtok(NULL, ":");
 
                 if (mmio_start[0] != '0' || mmio_start[1] != 'x')
@@ -768,13 +777,16 @@ RISCVMachine *virt_machine_main(int argc, char **argv) {
                 if (mmio_end[0] != '0' || mmio_end[1] != 'x')
                     usage(prog, "--mmio_range END address must begin with 0x...");
                 mmio_end_override = strtoll(mmio_end + 2, NULL, 16);
+
+                free(copy);
             } break;
 
             case 'p': {
                 if (!strchr(optarg, ':'))
                     usage(prog, "--plic expects an argument like START:SIZE");
 
-                char *plic_base_addr = strtok(optarg, ":");
+                char *copy           = strdup(optarg);
+                char *plic_base_addr = strtok(copy, ":");
                 char *plic_size      = strtok(NULL, ":");
 
                 if (plic_base_addr[0] != '0' || plic_base_addr[1] != 'x')
@@ -784,13 +796,16 @@ RISCVMachine *virt_machine_main(int argc, char **argv) {
                 if (plic_size[0] != '0' || plic_size[1] != 'x')
                     usage(prog, "--plic SIZE must begin with 0x...");
                 plic_size_override = strtoll(plic_size + 2, NULL, 16);
+
+                free(copy);
             } break;
 
             case 'C': {
                 if (!strchr(optarg, ':'))
                     usage(prog, "--clint expects an argument like START:SIZE");
 
-                char *clint_base_addr = strtok(optarg, ":");
+                char *copy            = strdup(optarg);
+                char *clint_base_addr = strtok(copy, ":");
                 char *clint_size      = strtok(NULL, ":");
 
                 if (clint_base_addr[0] != '0' || clint_base_addr[1] != 'x')
@@ -800,6 +815,8 @@ RISCVMachine *virt_machine_main(int argc, char **argv) {
                 if (clint_size[0] != '0' || clint_size[1] != 'x')
                     usage(prog, "--clint SIZE must begin with 0x...");
                 clint_size_override = strtoll(clint_size + 2, NULL, 16);
+
+                free(copy);
             } break;
 
             case 'u': custom_extension = true; break;
@@ -822,6 +839,7 @@ RISCVMachine *virt_machine_main(int argc, char **argv) {
                         checkpoint_period *= 1000000000;
                 }
                 break;
+            case 'L': clear_ids = true; break;
 
             default: usage(prog, "I'm not having this argument");
         }
@@ -983,8 +1001,9 @@ RISCVMachine *virt_machine_main(int argc, char **argv) {
     if (clint_size_override)
         p->clint_size = clint_size_override;
 
-    // ISA modifications
+    // core modifications
     p->custom_extension = custom_extension;
+    p->clear_ids        = clear_ids;
 
     // AMO enable flag
     p->amo_en = amo_en;

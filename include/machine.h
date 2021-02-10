@@ -194,6 +194,9 @@ typedef struct {
     /* Periodically create checkpoints */
     uint64_t checkpoint_period;
 
+    /* Clear mimpid, marchid, mvendorid */
+    bool clear_ids;
+
     uint64_t physical_addr_len;
 
     char *logfile;  // If non-zero, all output goes here, stderr and stdout

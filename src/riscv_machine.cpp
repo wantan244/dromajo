@@ -1137,6 +1137,8 @@ RISCVMachine *virt_machine_init(const VirtMachineParams *p) {
     s->plic_size       = p->plic_size;
     s->clint_base_addr = p->clint_base_addr;
     s->clint_size      = p->clint_size;
+    /* clear mimpid, marchid, mvendorid */
+    s->clear_ids = p->clear_ids;
 
     s->amo_en = p->amo_en;
     s->host = p->host;
