@@ -1291,8 +1291,10 @@ RISCVMachine *virt_machine_init(const VirtMachineParams *p) {
 
     /* interrupts and exception setup for cosim */
     s->common.cosim             = false;
-    s->common.pending_exception = -1;
-    s->common.pending_interrupt = -1;
+    for (int i = 0; i < s->ncpus; ++i) {
+        s->cpu_state[i]->dut_exception = -1;
+        s->cpu_state[i]->dut_interrupt = -1;
+    }
 
     /* plic/clint setup */
     s->plic_base_addr  = p->plic_base_addr;

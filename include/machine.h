@@ -224,10 +224,8 @@ typedef struct VirtMachine {
     uint64_t maxinsns;
     uint64_t trace;
 
-    /* For co-simulation only, they are -1 if nothing is pending. */
+    /* For co-simulation only */
     bool cosim;
-    int  pending_interrupt;
-    int  pending_exception;
 } VirtMachine;
 
 int load_file(uint8_t **pbuf, const char *filename);

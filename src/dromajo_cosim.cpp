@@ -42,8 +42,8 @@ dromajo_cosim_state_t *dromajo_cosim_init(int argc, char *argv[]) {
 #endif
 
     m->common.cosim             = true;
-    m->common.pending_interrupt = -1;
-    m->common.pending_exception = -1;
+    //m->common.pending_interrupt = -1;
+    //m->common.pending_exception = -1;
 
     return (dromajo_cosim_state_t *)m;
 }
@@ -170,16 +170,18 @@ static inline void handle_dut_overrides(RISCVCPUState *s, uint64_t mmio_start, u
  * otherwise.
  */
 void dromajo_cosim_raise_trap(dromajo_cosim_state_t *state, int hartid, int64_t cause, bool verbose) {
-    VirtMachine *m = (VirtMachine *)state;
+    RISCVMachine * r = (RISCVMachine *)state;
+    RISCVCPUState *s = r->cpu_state[hartid];
 
     if (cause < 0) {
-        assert(m->pending_interrupt == -1);
-        m->pending_interrupt = cause & 63;
+        assert(s->dut_interrupt == -1);
+        s->dut_interrupt = cause & 63;
         if (verbose)
-            fprintf(dromajo_stderr, "[DEBUG] DUT raised interrupt %d\n", m->pending_interrupt);
+            fprintf(dromajo_stderr, "[DEBUG] DUT raised interrupt %d\n", s->dut_interrupt);
     } else {
-        m->pending_exception = cause;
-        fprintf(dromajo_stderr, "[DEBUG] DUT raised exception %d\n", m->pending_exception);
+        s->dut_exception = cause;
+        if (verbose)
+            fprintf(dromajo_stderr, "[DEBUG] DUT raised exception %d\n", s->dut_exception);
     }
 }
 
@@ -250,17 +252,17 @@ int dromajo_cosim_step(dromajo_cosim_state_t *state, int hartid, uint64_t dut_pc
             break;
         }
 
-        if (r->common.pending_interrupt != -1 && r->common.pending_exception != -1) {
+        if (s->dut_interrupt != -1 && s->dut_exception != -1) {
             /* On the DUT, the interrupt can race the exception.
                Let's try to match that behavior */
 
             if (verbose)
-                fprintf(dromajo_stderr, "[DEBUG] DUT also raised exception %d\n", r->common.pending_exception);
+                fprintf(dromajo_stderr, "[DEBUG] DUT also raised exception %d\n", s->dut_exception);
             riscv_cpu_interp64(s, 1);  // Advance into the exception
 
             int cause = s->priv == PRV_S ? s->scause : s->mcause;
 
-            if (r->common.pending_exception != cause) {
+            if (s->dut_exception != cause) {
                 char priv = s->priv["US?M"];
 
                 /* Unfortunately, handling the error case is awkward,
@@ -273,18 +275,19 @@ int dromajo_cosim_step(dromajo_cosim_state_t *state, int hartid, uint64_t dut_pc
                         priv,
                         cause,
                         priv,
-                        r->common.pending_exception);
+                        s->dut_exception);
 
                 return 0x1FFF;
             }
         }
 
-        if (r->common.pending_interrupt != -1) {
-            riscv_cpu_set_mip(s, riscv_cpu_get_mip(s) | 1 << r->common.pending_interrupt);
-            fprintf(dromajo_stderr,
-                    "[DEBUG] Interrupt: MIP <- %d: Now MIP = %x\n",
-                    r->common.pending_interrupt,
-                    riscv_cpu_get_mip(s));
+        if (s->dut_interrupt != -1) {
+            riscv_cpu_set_mip(s, riscv_cpu_get_mip(s) | 1 << s->dut_interrupt);
+            if (verbose)
+                fprintf(dromajo_stderr,
+                        "[DEBUG] Interrupt: MIP <- %d: Now MIP = %x\n",
+                        s->dut_interrupt,
+                        riscv_cpu_get_mip(s));
         }
 
         if (riscv_cpu_interp64(s, 1) != 0) {
@@ -298,8 +301,8 @@ int dromajo_cosim_step(dromajo_cosim_state_t *state, int hartid, uint64_t dut_pc
             break;
         }
 
-        r->common.pending_interrupt = -1;
-        r->common.pending_exception = -1;
+        s->dut_interrupt = -1;
+        s->dut_exception = -1;
     }
 
     if (check)
@@ -343,8 +346,8 @@ int dromajo_cosim_step(dromajo_cosim_state_t *state, int hartid, uint64_t dut_pc
         fprintf(dromajo_stderr, "[error] EMU MSTATUS %08" PRIx64 ", DUT MSTATUS %08" PRIx64 "\n", emu_mstatus, dut_mstatus);
         fprintf(dromajo_stderr,
                 "[error] DUT pending exception %d pending interrupt %d\n",
-                r->common.pending_exception,
-                r->common.pending_interrupt);
+                s->dut_exception,
+                s->dut_interrupt);
         exit_code = 0x1FFF;
     }
 
