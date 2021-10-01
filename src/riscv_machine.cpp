@@ -235,6 +235,42 @@ static void host_write(void *opaque, uint32_t offset, uint32_t val, int size_log
   }
 }
 
+static uint32_t param_rom_read(void *opaque, uint32_t offset, int size_log2) {
+  // Hard-coded for supported BP configurations
+  // Only implement CC_X_DIM and CC_Y_DIM since those are only used by test programs
+  RISCVMachine *m = (RISCVMachine *)opaque;
+  if (offset == PARAM_CC_X_DIM) {
+    if (m->ncpus == 1) return 1;
+    if (m->ncpus == 2) return 2;
+    if (m->ncpus == 3) return 3;
+    if (m->ncpus == 4) return 2;
+    if (m->ncpus == 6) return 3;
+    if (m->ncpus == 8) return 4;
+    if (m->ncpus == 12) return 4;
+    if (m->ncpus == 16) return 4;
+  }
+  else if (offset == PARAM_CC_Y_DIM) {
+    if (m->ncpus == 1) return 1;
+    if (m->ncpus == 2) return 1;
+    if (m->ncpus == 3) return 1;
+    if (m->ncpus == 4) return 2;
+    if (m->ncpus == 6) return 2;
+    if (m->ncpus == 8) return 2;
+    if (m->ncpus == 12) return 3;
+    if (m->ncpus == 16) return 4;
+  }
+  else if (offset > PARAM_ROM_SIZE) {
+    vm_error("param_rom_read to address beyond ROM: PARAM_ROM_BASE_ADDR+0x%x\n", offset);
+  }
+  else {
+    vm_error("param_rom_read to unimplemented address PARAM_ROM_BASE_ADDR+0x%x\n", offset);
+  }
+}
+
+static void param_rom_write(void *opaque, uint32_t offset, uint32_t val, int size_log2) {
+  // Just a stub, param ROM is read-only, do nothing
+}
+
 /* CLINT registers
  * 0000 msip hart 0
  * 0004 msip hart 1
@@ -1204,6 +1240,15 @@ RISCVMachine *virt_machine_init(const VirtMachineParams *p) {
     host_init(s);
     cpu_register_device(s->mem_map, HOST_BASE_ADDR, HOST_SIZE, s,
                         host_read, host_write, DEVIO_SIZE32 | DEVIO_SIZE16 | DEVIO_SIZE8);
+
+    // BlackParrot Parameter ROM
+    cpu_register_device(s->mem_map,
+                        PARAM_ROM_BASE_ADDR,
+                        PARAM_ROM_SIZE,
+                        s,
+                        param_rom_read,
+                        param_rom_write,
+                        DEVIO_SIZE32 | DEVIO_SIZE16 | DEVIO_SIZE8);
 
 
     for (int j = 1; j < 32; j++) {
