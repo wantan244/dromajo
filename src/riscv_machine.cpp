@@ -1238,18 +1238,19 @@ RISCVMachine *virt_machine_init(const VirtMachineParams *p) {
 
     //BlackParrot Host
     host_init(s);
-    cpu_register_device(s->mem_map, HOST_BASE_ADDR, HOST_SIZE, s,
-                        host_read, host_write, DEVIO_SIZE32 | DEVIO_SIZE16 | DEVIO_SIZE8);
+    if (s->host) {
+      cpu_register_device(s->mem_map, HOST_BASE_ADDR, HOST_SIZE, s,
+                          host_read, host_write, DEVIO_SIZE32 | DEVIO_SIZE16 | DEVIO_SIZE8);
 
-    // BlackParrot Parameter ROM
-    cpu_register_device(s->mem_map,
-                        PARAM_ROM_BASE_ADDR,
-                        PARAM_ROM_SIZE,
-                        s,
-                        param_rom_read,
-                        param_rom_write,
-                        DEVIO_SIZE32 | DEVIO_SIZE16 | DEVIO_SIZE8);
-
+      // BlackParrot Parameter ROM
+      cpu_register_device(s->mem_map,
+                          PARAM_ROM_BASE_ADDR,
+                          PARAM_ROM_SIZE,
+                          s,
+                          param_rom_read,
+                          param_rom_write,
+                          DEVIO_SIZE32 | DEVIO_SIZE16 | DEVIO_SIZE8);
+    }
 
     for (int j = 1; j < 32; j++) {
         irq_init(&s->plic_irq[j], plic_set_irq, s, j);
